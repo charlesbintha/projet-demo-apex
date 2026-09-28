@@ -1,0 +1,930 @@
+page 12 (
+    name: Détail de la demande
+    alias: DETAIL-DEMANDE
+    title: Détail de la demande
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+        cssClasses: di-page
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        authorizationScheme: @di-lire-demande
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region di-1 (
+        name: Informations
+        type: plSqlDynamicContent
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                  l_id number;
+                  procedure field(p_label varchar2, p_value varchar2) is
+                  begin
+                    htp.p('<dt>' || apex_escape.html(p_label) || '</dt><dd>' ||
+                          apex_escape.html(nvl(p_value, 'Non renseigné')) || '</dd>');
+                  end;
+                begin
+                  if :P12_DEMANDE_ID is null or not regexp_like(:P12_DEMANDE_ID, '^[0-9]{1,38}$') then
+                    raise_application_error(-20004, 'Demande inexistante ou inaccessible.');
+                  end if;
+                  l_id := to_number(:P12_DEMANDE_ID);
+                  di_security_api.assert_request_access(l_id);
+                  for r in (
+                    select d.*, c.libelle as categorie, u.nom_affiche as demandeur,
+                           a.nom_affiche as agent
+                      from di_v_demandes d
+                      join di_categorie c on c.id = d.categorie_id
+                      join di_utilisateur u on u.id = d.demandeur_id
+                      left join di_utilisateur a on a.id = d.agent_id
+                     where d.id = l_id
+                  ) loop
+                    htp.p('<div class="di-page di-panel"><p class="di-eyebrow">Demande ' ||
+                          apex_escape.html(to_char(r.id,'TM9')) || '</p>');
+                    htp.p('<h2 class="di-section-title">' || apex_escape.html(r.objet) || '</h2>');
+                    htp.p('<p><span class="di-status di-status--' ||
+                      case r.statut when 'NOUVELLE' then 'nouvelle' when 'AFFECTEE' then 'affectee'
+                        when 'EN_COURS' then 'en-cours' when 'RESOLUE' then 'resolue'
+                        when 'CLOTUREE' then 'cloturee' end || '">' ||
+                      case r.statut when 'NOUVELLE' then 'Nouvelle' when 'AFFECTEE' then 'Affectée'
+                        when 'EN_COURS' then 'En cours' when 'RESOLUE' then 'Résolue'
+                        when 'CLOTUREE' then 'Clôturée' end || '</span></p>');
+                    htp.p('<dl class="di-facts">');
+                    field('Catégorie', r.categorie);
+                    field('Priorité', case r.priorite when 'BASSE' then 'Basse' when 'NORMALE' then 'Normale'
+                           when 'HAUTE' then 'Haute' when 'URGENTE' then 'Urgente' end);
+                    field('Demandeur', r.demandeur);
+                    field('Agent', nvl(r.agent, 'Non affecté'));
+                    field('Créée le', to_char(r.cree_le, 'DD/MM/YYYY HH24:MI TZH:TZM'));
+                    field('Affectée le', to_char(r.affecte_le, 'DD/MM/YYYY HH24:MI TZH:TZM'));
+                    field('Démarrée le', to_char(r.demarre_le, 'DD/MM/YYYY HH24:MI TZH:TZM'));
+                    field('Résolue le', to_char(r.resolu_le, 'DD/MM/YYYY HH24:MI TZH:TZM'));
+                    field('Clôturée le', to_char(r.cloture_le, 'DD/MM/YYYY HH24:MI TZH:TZM'));
+                    htp.p('</dl><h3 class="di-section-title">Description</h3><p class="di-prose">' ||
+                      apex_escape.html(r.description) || '</p>');
+                    if r.resolution is not null then
+                      htp.p('<h3 class="di-section-title">Explication de résolution</h3><p class="di-prose">' ||
+                        apex_escape.html(r.resolution) || '</p>');
+                    end if;
+                    htp.p('</div>');
+                  end loop;
+                end;
+                
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+            cssClasses: di-region
+        }
+    )
+
+    region di-40 (
+        name: Affectation
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+            cssClasses: di-region
+        }
+        security {
+            authorizationScheme: @di-affecter-demande
+        }
+    )
+
+    region di-50 (
+        name: Traitement
+        type: staticContent
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+            cssClasses: di-region
+        }
+        security {
+            authorizationScheme: @di-demarrer-demande
+        }
+    )
+
+    region di-60 (
+        name: Résolution
+        type: staticContent
+        layout {
+            sequence: 50
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+            cssClasses: di-region
+        }
+        security {
+            authorizationScheme: @di-resoudre-demande
+        }
+    )
+
+    region di-70 (
+        name: Clôture
+        type: staticContent
+        layout {
+            sequence: 60
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+            cssClasses: di-region
+        }
+        security {
+            authorizationScheme: @di-cloturer-demande
+        }
+    )
+
+    region di-80 (
+        name: Ajouter un commentaire
+        type: staticContent
+        layout {
+            sequence: 70
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+            cssClasses: di-region
+        }
+        security {
+            authorizationScheme: @di-commenter-demande
+        }
+    )
+
+    region di-commentaires (
+        name: Commentaires
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select c.cree_le, u.nom_affiche as auteur, c.contenu
+                from di_v_commentaires c join di_utilisateur u on u.id=c.auteur_id
+                where c.demande_id=to_number(:P12_DEMANDE_ID)
+                order by c.cree_le desc, c.id desc
+                ```
+        }
+        layout {
+            sequence: 90
+            slot: body
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+            cssClasses: di-report
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 1000000
+        }
+        messages {
+            whenNoDataFound: Aucune donnée accessible pour ces critères.
+            whenMoreDataFound: Limite du rapport atteinte. Affinez les filtres.
+        }
+        actionsMenu {
+            download: false
+        }
+        advanced {
+            savedReportMappingIdentifier: 91001000001012101
+        }
+
+        column AUTEUR (
+            type: plainText
+            heading {
+                heading: Auteur
+                alignment: center
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
+            }
+        )
+
+        column CONTENU (
+            type: plainText
+            heading {
+                heading: Commentaire
+                alignment: center
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
+            }
+        )
+
+        column CREE_LE (
+            type: plainText
+            heading {
+                heading: Date
+                alignment: center
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: A
+            }
+        )
+
+        savedReport DI91001000001012100 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn AUTEUR (
+                sequence: 2
+            )
+
+            displayColumn CONTENU (
+                sequence: 3
+            )
+
+            displayColumn CREE_LE (
+                sequence: 1
+            )
+
+        )
+
+    )
+
+    region di-historique (
+        name: Historique des actions
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select h.cree_le, u.nom_affiche as acteur, h.action_code as action,
+                 h.ancien_statut, h.nouveau_statut, a.nom_affiche as agent_avant,
+                 n.nom_affiche as agent_apres, h.detail
+                from di_v_historique h join di_utilisateur u on u.id=h.acteur_id
+                left join di_utilisateur a on a.id=h.ancien_agent_id
+                left join di_utilisateur n on n.id=h.nouvel_agent_id
+                where h.demande_id=to_number(:P12_DEMANDE_ID)
+                order by h.cree_le desc, h.id desc
+                ```
+        }
+        layout {
+            sequence: 100
+            slot: body
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+            cssClasses: di-report
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 1000000
+        }
+        messages {
+            whenNoDataFound: Aucune donnée accessible pour ces critères.
+            whenMoreDataFound: Limite du rapport atteinte. Affinez les filtres.
+        }
+        actionsMenu {
+            download: false
+        }
+        advanced {
+            savedReportMappingIdentifier: 91001000001012201
+        }
+
+        column ACTEUR (
+            type: plainText
+            heading {
+                heading: Acteur
+                alignment: center
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
+            }
+        )
+
+        column ACTION (
+            type: plainText
+            heading {
+                heading: Action
+                alignment: center
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
+            }
+        )
+
+        column AGENT_APRES (
+            type: plainText
+            heading {
+                heading: Agent après
+                alignment: center
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: G
+            }
+        )
+
+        column AGENT_AVANT (
+            type: plainText
+            heading {
+                heading: Agent avant
+                alignment: center
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: F
+            }
+        )
+
+        column ANCIEN_STATUT (
+            type: plainText
+            heading {
+                heading: Avant
+                alignment: center
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: D
+            }
+        )
+
+        column CREE_LE (
+            type: plainText
+            heading {
+                heading: Date
+                alignment: center
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: A
+            }
+        )
+
+        column DETAIL (
+            type: plainText
+            heading {
+                heading: Explication
+                alignment: center
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: H
+            }
+        )
+
+        column NOUVEAU_STATUT (
+            type: plainText
+            heading {
+                heading: Après
+                alignment: center
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: E
+            }
+        )
+
+        savedReport DI91001000001012200 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn ACTEUR (
+                sequence: 2
+            )
+
+            displayColumn ACTION (
+                sequence: 3
+            )
+
+            displayColumn AGENT_APRES (
+                sequence: 7
+            )
+
+            displayColumn AGENT_AVANT (
+                sequence: 6
+            )
+
+            displayColumn ANCIEN_STATUT (
+                sequence: 4
+            )
+
+            displayColumn CREE_LE (
+                sequence: 1
+            )
+
+            displayColumn DETAIL (
+                sequence: 8
+            )
+
+            displayColumn NOUVEAU_STATUT (
+                sequence: 5
+            )
+
+        )
+
+    )
+
+    pageItem P12_AGENT_ID (
+        type: selectList
+        label {
+            label: Agent actif
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery: select nom_affiche d, id r from di_utilisateur where role_code='AGENT' and actif='O' and di_security_api.has_role('RESPONSABLE')=1 order by nom_affiche, id
+            displayExtraValues: false
+            nullDisplayValue: — Sélectionner —
+        }
+        layout {
+            sequence: 10
+            region: @di-40
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        security {
+            authorizationScheme: @di-affecter-demande
+        }
+    )
+
+    pageItem P12_COMMENTAIRE (
+        type: textarea
+        label {
+            label: Commentaire (obligatoire)
+            alignment: left
+        }
+        settings {
+            charCounter: true
+            trimSpaces: none
+        }
+        layout {
+            sequence: 10
+            region: @di-80
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            width: 60
+            height: 5
+        }
+        validation {
+            maxLength: 4000
+        }
+        security {
+            authorizationScheme: @di-commenter-demande
+        }
+    )
+
+    pageItem P12_DEMANDE_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @di-1
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P12_RESOLUTION (
+        type: textarea
+        label {
+            label: Explication de résolution (obligatoire)
+            alignment: left
+        }
+        settings {
+            charCounter: true
+            trimSpaces: none
+        }
+        layout {
+            sequence: 10
+            region: @di-60
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            width: 60
+            height: 5
+        }
+        validation {
+            maxLength: 4000
+        }
+        security {
+            authorizationScheme: @di-resoudre-demande
+        }
+    )
+
+    pageItem P12_VERSION_NO (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @di-1
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    button affecter (
+        buttonName: AFFECTER
+        label: Affecter
+        layout {
+            sequence: 20
+            region: @di-40
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from di_v_demandes where id=to_number(:P12_DEMANDE_ID) and statut='NOUVELLE'
+        }
+        security {
+            authorizationScheme: @di-affecter-demande
+        }
+    )
+
+    button cloturer (
+        buttonName: CLOTURER
+        label: Clôturer
+        layout {
+            sequence: 20
+            region: @di-70
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from di_v_demandes where id=to_number(:P12_DEMANDE_ID) and statut='RESOLUE'
+        }
+        security {
+            authorizationScheme: @di-cloturer-demande
+        }
+    )
+
+    button commenter (
+        buttonName: COMMENTER
+        label: Commenter
+        layout {
+            sequence: 20
+            region: @di-80
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from di_v_demandes where id=to_number(:P12_DEMANDE_ID) and statut<>'CLOTUREE'
+        }
+        security {
+            authorizationScheme: @di-commenter-demande
+        }
+    )
+
+    button demarrer (
+        buttonName: DEMARRER
+        label: Démarrer
+        layout {
+            sequence: 20
+            region: @di-50
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from di_v_demandes where id=to_number(:P12_DEMANDE_ID) and statut='AFFECTEE'
+        }
+        security {
+            authorizationScheme: @di-demarrer-demande
+        }
+    )
+
+    button recharger (
+        buttonName: RECHARGER
+        label: Recharger
+        layout {
+            sequence: 20
+            region: @di-1
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectUrl
+            targetUrl: f?p=&APP_ID.:12:&SESSION.::&DEBUG.:12:P12_DEMANDE_ID:&P12_DEMANDE_ID.
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button resoudre (
+        buttonName: RESOUDRE
+        label: Résoudre
+        layout {
+            sequence: 20
+            region: @di-60
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from di_v_demandes where id=to_number(:P12_DEMANDE_ID) and statut='EN_COURS'
+        }
+        security {
+            authorizationScheme: @di-resoudre-demande
+        }
+    )
+
+    button retour (
+        buttonName: RETOUR
+        label: Retour aux demandes
+        layout {
+            sequence: 10
+            region: @di-1
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectUrl
+            targetUrl: f?p=&APP_ID.:10:&SESSION.::&DEBUG.
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    process contrôler-accès-et-charger-version (
+        name: Contrôler accès et charger version
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                  l_id number;
+                  l_actor number;
+                  l_role varchar2(20);
+                begin
+                  di_security_api.get_actor(l_actor, l_role);
+                  if :P12_DEMANDE_ID is null or not regexp_like(:P12_DEMANDE_ID, '^[0-9]{1,38}$') then
+                    raise_application_error(-20004, 'Demande inexistante ou inaccessible.');
+                  end if;
+                  l_id := to_number(:P12_DEMANDE_ID);
+                  di_security_api.assert_request_access(l_id);
+                  -- Ne pas rafraichir la version apres un POST en erreur : cela masquerait
+                  -- un conflit de concurrence. Le lien Recharger produit un nouveau GET.
+                  if apex_application.g_request is null then
+                    select version_no into :P12_VERSION_NO from di_v_demandes where id = l_id;
+                    :P12_AGENT_ID := null;
+                    :P12_RESOLUTION := null;
+                    :P12_COMMENTAIRE := null;
+                  end if;
+                exception
+                  when no_data_found then
+                    raise_application_error(-20004, 'Demande inexistante ou inaccessible.');
+                end;
+                
+                ```
+        }
+        execution {
+            sequence: 5
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 91001000001012300
+        }
+    )
+
+    process exécuter-action-métier (
+        name: Exécuter action métier
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                  l_id number;
+                  l_version number;
+                  l_agent number;
+                  l_message varchar2(4000);
+                  l_success varchar2(200);
+                begin
+                  if :P12_DEMANDE_ID is null or not regexp_like(:P12_DEMANDE_ID, '^[0-9]{1,38}$') then
+                    raise_application_error(-20004, 'Demande inexistante ou inaccessible.');
+                  end if;
+                  l_id := to_number(:P12_DEMANDE_ID);
+                  -- Controle serveur independant de tout bouton ou autorisation mise en cache.
+                  di_security_api.assert_request_access(l_id);
+                  if :P12_VERSION_NO is null or not regexp_like(:P12_VERSION_NO, '^[0-9]{1,38}$') then
+                    raise_application_error(-20007, 'Version absente ou invalide. Recharger la demande.');
+                  end if;
+                  l_version := to_number(:P12_VERSION_NO);
+                  case apex_application.g_request
+                    when 'AFFECTER' then
+                      di_security_api.assert_role('RESPONSABLE');
+                      if :P12_AGENT_ID is null or not regexp_like(:P12_AGENT_ID, '^[0-9]{1,38}$') then
+                        raise_application_error(-20008, 'Sélectionnez un agent actif.');
+                      end if;
+                      l_agent := to_number(:P12_AGENT_ID);
+                      di_request_api.affecter_agent(p_demande_id => l_id, p_agent_id => l_agent,
+                                                   p_version_attendue => l_version);
+                      l_success := 'La demande a été affectée.';
+                    when 'DEMARRER' then
+                      di_security_api.assert_role('AGENT');
+                      di_request_api.demarrer_traitement(p_demande_id => l_id, p_version_attendue => l_version);
+                      l_success := 'Le traitement a démarré.';
+                    when 'RESOUDRE' then
+                      di_security_api.assert_role('AGENT');
+                      di_request_api.resoudre_demande(p_demande_id => l_id, p_resolution => :P12_RESOLUTION,
+                                                     p_version_attendue => l_version);
+                      l_success := 'La demande a été résolue.';
+                    when 'CLOTURER' then
+                      di_request_api.cloturer_demande(p_demande_id => l_id, p_version_attendue => l_version);
+                      l_success := 'La demande a été clôturée.';
+                    when 'COMMENTER' then
+                      di_request_api.commenter_demande(p_demande_id => l_id, p_contenu => :P12_COMMENTAIRE,
+                                                      p_version_attendue => l_version);
+                      l_success := 'Le commentaire a été ajouté.';
+                    else
+                      raise_application_error(-20003, 'Action non autorisée.');
+                  end case;
+                  -- Pas de COMMIT : APEX valide la transaction apres traitement reussi.
+                  apex_application.g_print_success_message := l_success;
+                exception
+                  when others then
+                    l_message := case sqlcode
+                      when -20001 then 'Votre session a expiré. Reconnectez-vous.'
+                      when -20002 then 'Votre compte est absent ou inactif.'
+                      when -20003 then 'Vous ne pouvez pas effectuer cette action.'
+                      when -20004 then 'Demande inexistante ou inaccessible.'
+                      when -20005 then 'Cette action est impossible dans l’état actuel de la demande.'
+                      when -20006 then 'Saisissez un texte non vide, limité à 4 000 octets.'
+                      when -20007 then 'La demande a changé depuis son affichage. Copiez votre texte puis utilisez Recharger avant de recommencer.'
+                      when -20008 then 'Sélectionnez un agent actif.'
+                      else null end;
+                    if l_message is null then raise; end if;
+                    apex_error.add_error(p_message => l_message,
+                                        p_display_location => apex_error.c_inline_in_notification);
+                end;
+                
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 91001000001012301
+        }
+    )
+
+    branch (
+        name: Recharger après action réussie
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 12
+                items: {
+                    P12_DEMANDE_ID: &P12_DEMANDE_ID.
+                }
+                clearCache: 12
+            }
+        }
+    )
+
+)
+
