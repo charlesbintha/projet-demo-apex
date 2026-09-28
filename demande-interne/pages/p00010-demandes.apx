@@ -1,7 +1,7 @@
 page 10 (
-    name: Mes Demandes
+    name: Demandes
     alias: DEMANDES
-    title: Mes Demandes
+    title: Demandes
     appearance {
         pageTemplate: @/standard
         templateOptions: #DEFAULT#
@@ -20,7 +20,7 @@ page 10 (
         name: Filtrer les demandes
         type: staticContent
         source {
-            htmlCode: <p class="di-lead">Seules les demandes auxquelles vous avez accès sont affichées seulement.</p>
+            htmlCode: <p class="di-lead">Seules les demandes auxquelles vous avez accès sont affichées.</p>
         }
         layout {
             sequence: 10
