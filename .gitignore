@@ -1,0 +1,29 @@
+# Liste blanche : seuls les livrables sont versionnes.
+/*
+!/.gitignore
+# Export APEXlang complet, avec ses ressources et sa configuration.
+!/demande-interne/
+
+# Migrations SQL uniquement (repertoire plat).
+!/migrations/
+/migrations/*
+!/migrations/*.sql
+
+# Les CSS/JS de l'application restent dans
+# demande-interne/shared-components/static-files/.
+
+# Secrets et fichiers locaux exclus, meme dans les dossiers autorises.
+Wallet*
+wallet*
+*.sso
+*.p12
+*.jks
+*.pem
+*.key
+tnsnames.ora
+sqlnet.ora
+ojdbc.properties
+.env
+.env.*
+.DS_Store
+*.log
