@@ -14,5 +14,18 @@ breadcrumb breadcrumb (
         }
     )
 
+    entry liste-des-categories (
+        name: Liste des Categories
+        pageNumber: 3
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 3
+            }
+        }
+    )
+
 )
 

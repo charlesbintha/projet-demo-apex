@@ -1,0 +1,363 @@
+page 2 (
+    name: Tableau de bord PROD
+    alias: TABLEAU-DE-BORD
+    title: Demande Internes PROD
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        authorizationScheme: @di-acces-application
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region di-dashboard-chart-1 (
+        name: Répartition par statut
+        type: chart
+        layout {
+            sequence: 20
+            slot: body
+            columnSpan: 6
+            columnCssClasses: col-sm-12
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        chart {
+            type: donut
+        }
+        chartLayout {
+            height: 320
+        }
+        dataCursor {
+            dimOnHover: false
+        }
+        animation {
+            onDisplay: none
+            onDataChange: none
+        }
+        legend {
+            hideAndShowBehavior: none
+        }
+
+        series di-chart-series-1 (
+            name: Demandes
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select case statut when 'NOUVELLE' then 'Nouvelle' when 'AFFECTEE' then 'Affectée'
+                     when 'EN_COURS' then 'En cours' when 'RESOLUE' then 'Résolue' when 'CLOTUREE' then 'Clôturée' end label,
+                     count(*) value
+                    from di_v_demandes group by statut
+                    
+                    ```
+            }
+            columnMapping {
+                label: LABEL
+                value: VALUE
+            }
+        )
+
+    )
+
+    region di-dashboard-chart-2 (
+        name: Répartition par priorité PROD
+        type: chart
+        layout {
+            sequence: 30
+            slot: body
+            startNewRow: false
+            columnSpan: 6
+            columnCssClasses: col-sm-12
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        chartLayout {
+            height: 320
+        }
+        dataCursor {
+            dimOnHover: false
+        }
+        animation {
+            onDisplay: none
+            onDataChange: none
+        }
+        legend {
+            show: false
+        }
+
+        series di-chart-series-2 (
+            name: Demandes
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select case priorite when 'BASSE' then 'Basse' when 'NORMALE' then 'Normale'
+                     when 'HAUTE' then 'Haute' when 'URGENTE' then 'Urgente' end label,count(*) value
+                    from di_v_demandes group by priorite
+                    
+                    ```
+            }
+            columnMapping {
+                label: LABEL
+                value: VALUE
+            }
+        )
+
+        axis x (
+            name: x
+            minorTicks {
+                show: false
+            }
+        )
+
+        axis y (
+            name: y
+            minorTicks {
+                show: false
+            }
+        )
+
+    )
+
+    region di-dashboard-chart-3 (
+        name: Demandes par catégorie
+        type: chart
+        layout {
+            sequence: 40
+            slot: body
+            columnSpan: 6
+            columnCssClasses: col-sm-12
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        chartAppearance {
+            orientation: horizontal
+        }
+        chartLayout {
+            height: 320
+        }
+        dataCursor {
+            dimOnHover: false
+        }
+        animation {
+            onDisplay: none
+            onDataChange: none
+        }
+        legend {
+            show: false
+        }
+
+        series di-chart-series-3 (
+            name: Demandes
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select c.libelle label,count(*) value
+                    from di_v_demandes d join di_categorie c on c.id=d.categorie_id
+                    group by c.libelle order by count(*) desc,c.libelle
+                    
+                    ```
+            }
+            columnMapping {
+                label: LABEL
+                value: VALUE
+            }
+        )
+
+        axis x (
+            name: x
+            minorTicks {
+                show: false
+            }
+        )
+
+        axis y (
+            name: y
+            minorTicks {
+                show: false
+            }
+        )
+
+    )
+
+    region di-dashboard-chart-4 (
+        name: Créations — six derniers mois
+        type: chart
+        layout {
+            sequence: 50
+            slot: body
+            startNewRow: false
+            columnSpan: 6
+            columnCssClasses: col-sm-12
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        chartLayout {
+            height: 320
+        }
+        dataCursor {
+            dimOnHover: false
+        }
+        animation {
+            onDisplay: none
+            onDataChange: none
+        }
+        legend {
+            show: false
+        }
+
+        series di-chart-series-4 (
+            name: Demandes
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    with mois as (
+                     select add_months(trunc(current_date,'MM'),level-6) debut
+                     from dual connect by level<=6
+                    ), demandes as (
+                     select trunc(cast(cree_le at local as date),'MM') debut,count(*) nb
+                     from di_v_demandes
+                     where cree_le>=cast(add_months(trunc(current_date,'MM'),-5) as timestamp with time zone)
+                       and cree_le<cast(add_months(trunc(current_date,'MM'),1) as timestamp with time zone)
+                     group by trunc(cast(cree_le at local as date),'MM')
+                    )
+                    select to_char(m.debut,'YYYY-MM') label,nvl(d.nb,0) value
+                    from mois m left join demandes d on d.debut=m.debut order by m.debut
+                    
+                    ```
+            }
+            columnMapping {
+                label: LABEL
+                value: VALUE
+            }
+        )
+
+        axis x (
+            name: x
+            minorTicks {
+                show: false
+            }
+        )
+
+        axis y (
+            name: y
+            minorTicks {
+                show: false
+            }
+        )
+
+    )
+
+    region di-dashboard-kpis (
+        name: Vue d’ensemble des demandes
+        type: plSqlDynamicContent
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                  l_total number;
+                  l_nouvelle number;
+                  l_affectee number;
+                  l_encours number;
+                  l_resolue number;
+                  l_cloturee number;
+                  l_actor number;
+                  l_role varchar2(20);
+                  procedure card(p_label varchar2,p_value number,p_class varchar2) is
+                  begin
+                    htp.p('<div class="di-dash-kpi di-dash-kpi--'||p_class||'"><dt>'||apex_escape.html(p_label)||
+                      '</dt><dd>'||to_char(p_value,'FM999999999999990')||'</dd></div>');
+                  end;
+                begin
+                  di_security_api.get_actor(l_actor,l_role);
+                  select count(*),count(case when statut='NOUVELLE' then 1 end),
+                    count(case when statut='AFFECTEE' then 1 end),count(case when statut='EN_COURS' then 1 end),
+                    count(case when statut='RESOLUE' then 1 end),count(case when statut='CLOTUREE' then 1 end)
+                  into l_total,l_nouvelle,l_affectee,l_encours,l_resolue,l_cloturee from di_v_demandes;
+                  htp.p('<p class="di-dash-summary">'||to_char(l_total,'FM999999999999990')||
+                    ' demande(s) accessible(s). '||case l_role when 'DEMANDEUR' then 'Vos demandes personnelles.'
+                      when 'AGENT' then 'Les demandes qui vous sont affectées.' else 'Toutes les demandes.' end||'</p>');
+                  htp.p('<dl class="di-dash-kpis" aria-label="Demandes par statut">');
+                  card('Nouvelles',l_nouvelle,'nouvelle');
+                  card('Affectées',l_affectee,'affectee');
+                  card('En cours',l_encours,'encours');
+                  card('Résolues',l_resolue,'resolue');
+                  card('Clôturées',l_cloturee,'cloturee');
+                  htp.p('</dl>');
+                end;
+                
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region di-dashboard-title (
+        name: Demande Internes
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 5
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+        }
+    )
+
+    process vérifier-le-compte-connecté (
+        name: Vérifier le compte connecté
+        type: executeCode
+        source {
+            plsqlCode: declare l_id number; l_role varchar2(20); begin di_security_api.get_actor(l_id,l_role); end;
+        }
+        execution {
+            sequence: 5
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 91001000000200200
+        }
+    )
+
+)
+

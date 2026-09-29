@@ -461,7 +461,7 @@ page 10 (
         layout {
             sequence: 30
             region: @demandes
-            slot: next
+            slot: create
         }
         appearance {
             buttonTemplate: @/text

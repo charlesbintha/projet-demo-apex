@@ -1,0 +1,582 @@
+page 20 (
+    name: Utilisateurs
+    alias: UTILISATEURS
+    title: Utilisateurs
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region compte-applicatif (
+        name: Compte applicatif
+        type: staticContent
+        source {
+            htmlCode: <p>Choisissez un compte puis Charger. Pour créer, choisissez Nouveau compte puis Charger. Le login est défini à la création et reste inchangé lors des modifications. Un nouveau compte est actif ; email et activation se règlent ensuite.</p>
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+        }
+    )
+
+    region di-utilisateurs (
+        name: Utilisateurs
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery: select id,apex_username,nom_affiche,email,role_code,actif,cree_le from di_utilisateur where di_security_api.has_role('RESPONSABLE')=1 order by nom_affiche,id
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/interactive-report
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 1000000
+        }
+        messages {
+            whenNoDataFound: Aucun utilisateur.
+        }
+        actionsMenu {
+            download: false
+        }
+        advanced {
+            savedReportMappingIdentifier: 91001000002000101
+        }
+
+        column ACTIF (
+            type: plainText
+            heading {
+                heading: Actif
+                alignment: center
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: F
+            }
+        )
+
+        column APEX_USERNAME (
+            type: plainText
+            heading {
+                heading: Identifiant
+                alignment: center
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
+            }
+        )
+
+        column CREE_LE (
+            type: plainText
+            heading {
+                heading: Création
+                alignment: center
+            }
+            layout {
+                sequence: 70
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: G
+            }
+        )
+
+        column EMAIL (
+            type: plainText
+            heading {
+                heading: Email
+                alignment: center
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: D
+            }
+        )
+
+        column ID (
+            type: plainText
+            heading {
+                heading: ID
+                alignment: center
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: A
+            }
+        )
+
+        column NOM_AFFICHE (
+            type: plainText
+            heading {
+                heading: Nom
+                alignment: center
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
+            }
+        )
+
+        column ROLE_CODE (
+            type: plainText
+            heading {
+                heading: Rôle
+                alignment: center
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: E
+            }
+        )
+
+        savedReport DI_USERS_20 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn ACTIF (
+                sequence: 6
+            )
+
+            displayColumn APEX_USERNAME (
+                sequence: 2
+            )
+
+            displayColumn CREE_LE (
+                sequence: 7
+            )
+
+            displayColumn EMAIL (
+                sequence: 4
+            )
+
+            displayColumn ID (
+                sequence: 1
+            )
+
+            displayColumn NOM_AFFICHE (
+                sequence: 3
+            )
+
+            displayColumn ROLE_CODE (
+                sequence: 5
+            )
+
+        )
+
+    )
+
+    region gestion-des-utilisateurs (
+        name: Gestion des utilisateurs
+        type: staticContent
+        layout {
+            sequence: 5
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+        }
+    )
+
+    pageItem P20_ACTIF (
+        type: selectList
+        label {
+            label: Actif
+            alignment: left
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC2:Oui;O,Non;N
+            displayExtraValues: false
+            nullDisplayValue: — Choisir —
+        }
+        layout {
+            sequence: 160
+            region: @compte-applicatif
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P20_EMAIL (
+        type: textField
+        label {
+            label: Email
+            alignment: left
+        }
+        layout {
+            sequence: 140
+            region: @compte-applicatif
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            width: 50
+        }
+        validation {
+            maxLength: 254
+        }
+    )
+
+    pageItem P20_LOGIN (
+        type: textField
+        label {
+            label: Identifiant de connexion
+            alignment: left
+        }
+        layout {
+            sequence: 120
+            region: @compte-applicatif
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            width: 50
+        }
+        validation {
+            maxLength: 100
+        }
+    )
+
+    pageItem P20_NOM (
+        type: textField
+        label {
+            label: Nom affiché
+            alignment: left
+        }
+        layout {
+            sequence: 130
+            region: @compte-applicatif
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            width: 50
+        }
+        validation {
+            maxLength: 150
+        }
+    )
+
+    pageItem P20_PASSWORD (
+        type: password
+        label {
+            label: Mot de passe (création ou réinitialisation)
+            alignment: left
+        }
+        settings {
+            submitWhenEnterPressed: false
+        }
+        layout {
+            sequence: 170
+            region: @compte-applicatif
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            width: 40
+        }
+        validation {
+            maxLength: 100
+        }
+        advanced {
+            customAttributes: autocomplete="new-password"
+        }
+        sessionState {
+            storage: request
+        }
+    )
+
+    pageItem P20_ROLE (
+        type: selectList
+        label {
+            label: Rôle
+            alignment: left
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC2:Demandeur;DEMANDEUR,Agent;AGENT,Responsable;RESPONSABLE
+            displayExtraValues: false
+            nullDisplayValue: — Choisir —
+        }
+        layout {
+            sequence: 150
+            region: @compte-applicatif
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P20_TOKEN (
+        type: hidden
+        layout {
+            sequence: 180
+            region: @compte-applicatif
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P20_USER_ID (
+        type: selectList
+        label {
+            label: Compte à charger
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery: select nom_affiche||' ('||apex_username||')' d,id r from di_utilisateur where di_security_api.has_role('RESPONSABLE')=1 order by nom_affiche,id
+            displayExtraValues: false
+            nullDisplayValue: Nouveau compte
+        }
+        layout {
+            sequence: 110
+            region: @compte-applicatif
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    button charger (
+        buttonName: CHARGER
+        label: Charger / Nouveau
+        layout {
+            sequence: 31
+            region: @compte-applicatif
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button creer (
+        buttonName: CREER
+        label: Créer le compte
+        layout {
+            sequence: 32
+            region: @compte-applicatif
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button enregistrer (
+        buttonName: ENREGISTRER
+        label: Enregistrer
+        layout {
+            sequence: 33
+            region: @compte-applicatif
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button reinitialiser (
+        buttonName: REINITIALISER
+        label: Réinitialiser le mot de passe
+        layout {
+            sequence: 34
+            region: @compte-applicatif
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    process administrer-le-compte (
+        name: Administrer le compte
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                  l_id number;
+                  procedure charger is
+                  begin
+                    if l_id is null then
+                      :P20_LOGIN:=null; :P20_NOM:=null; :P20_EMAIL:=null;
+                      :P20_ROLE:='DEMANDEUR'; :P20_ACTIF:='O'; :P20_TOKEN:=null;
+                    else
+                      select apex_username,nom_affiche,email,role_code,actif
+                      into :P20_LOGIN,:P20_NOM,:P20_EMAIL,:P20_ROLE,:P20_ACTIF
+                      from di_utilisateur where id=l_id;
+                      :P20_TOKEN:=di_user_admin_api.version_token(l_id);
+                    end if;
+                  end;
+                begin
+                  di_security_api.assert_role('RESPONSABLE');
+                  l_id:=to_number(:P20_USER_ID default null on conversion error);
+                  if :P20_USER_ID is not null and l_id is null then
+                    raise_application_error(-20702,'Selection de compte invalide.');
+                  end if;
+                  case apex_application.g_request
+                    when 'CHARGER' then charger;
+                    when 'CREER' then
+                      if l_id is not null then raise_application_error(-20702,'Selectionner Nouveau compte puis Charger avant de creer.'); end if;
+                      di_auth_api.create_user(p_username=>:P20_LOGIN,p_display_name=>:P20_NOM,
+                        p_role=>:P20_ROLE,p_password=>:P20_PASSWORD,p_user_id=>l_id);
+                      :P20_USER_ID:=to_char(l_id,'TM9');
+                      charger;
+                      apex_application.g_print_success_message:='Compte actif cree. Vous pouvez maintenant renseigner son email.';
+                    when 'ENREGISTRER' then
+                      if l_id is null then raise_application_error(-20702,'Charger un compte existant.'); end if;
+                      di_user_admin_api.save_user(l_id,:P20_NOM,:P20_EMAIL,:P20_ROLE,:P20_ACTIF,:P20_TOKEN);
+                      charger;
+                      apex_application.g_print_success_message:='Compte mis a jour.';
+                    when 'REINITIALISER' then
+                      if l_id is null then raise_application_error(-20702,'Charger un compte existant.'); end if;
+                      if :P20_TOKEN is null or :P20_TOKEN<>di_user_admin_api.version_token(l_id) then
+                        raise_application_error(-20701,'Rechargez le compte avant de reinitialiser son mot de passe.');
+                      end if;
+                      di_auth_api.reset_password(p_user_id=>l_id,p_new_password=>:P20_PASSWORD);
+                      apex_application.g_print_success_message:='Mot de passe reinitialise.';
+                    else raise_application_error(-20003,'Action non autorisee.');
+                  end case;
+                  :P20_PASSWORD:=null;
+                exception when others then
+                  :P20_PASSWORD:=null;
+                  if sqlcode between -20704 and -20701 then
+                    apex_error.add_error(p_message=>substr(sqlerrm,12),p_display_location=>apex_error.c_inline_in_notification);
+                  elsif sqlcode=-1 then
+                    apex_error.add_error(p_message=>'Cet identifiant existe deja.',p_display_location=>apex_error.c_inline_in_notification);
+                  elsif sqlcode in (-20204,-20201) then
+                    apex_error.add_error(p_message=>'Verifier le nom, le role et le login. Le mot de passe doit contenir de 15 a 100 caracteres.',p_display_location=>apex_error.c_inline_in_notification);
+                  else raise;
+                  end if;
+                end;
+                
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 91001000002000202
+        }
+    )
+
+    process vérifier-le-responsable (
+        name: Vérifier le responsable
+        type: executeCode
+        source {
+            plsqlCode: begin di_security_api.assert_role('RESPONSABLE'); :P20_PASSWORD:=null; end;
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 91001000002000201
+        }
+    )
+
+    branch (
+        name: Afficher le compte après succès
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 20
+            }
+        }
+    )
+
+)
+
