@@ -1,7 +1,7 @@
 page 1 (
-    name: Demande Interne PROD
+    name: Home
     alias: HOME
-    title: Demande Interne PROD
+    title: Demande Interne
     appearance {
         pageTemplate: @/standard
         templateOptions: #DEFAULT#

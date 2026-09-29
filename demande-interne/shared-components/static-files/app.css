@@ -1,5 +1,5 @@
-/* Demande Interne — 1.0.0 — Oracle APEX Universal Theme 42 / 26.1.
-   Application file: #APP_FILES#app.css?v=1.0.0
+/* Demande Interne — 1.0.2 — Oracle APEX Universal Theme 42 / 26.1.
+   Application file: #APP_FILES#app.css?v=1.0.2
    No external dependency. Keep UT markup, focus, validation and visibility rules. */
 :root {
   --di-bg: #f4f6f9;
@@ -125,4 +125,24 @@
 @media print {
   .di-region, .di-metric { box-shadow: none; }
   .di-status, .di-priority { color: #000; background: #fff; border-color: #666; }
+}
+
+/* DI 1.0.2 : couleurs semantiques, toujours accompagnees de texte. */
+.di-filters-row .t-Region-header { background: #edf4ff; border-block-start: 3px solid #2563eb; }
+.di-filters-row .apex-item-select { background-color: #f0f6ff; border: 1px solid #789aca; border-radius: .5rem; min-height: 2.75rem; }
+.di-filters-row .t-Form-label { color: #174b87; font-weight: 700; }
+.di-metric { border-block-start: 4px solid var(--di-card-accent, #1859a9); background: var(--di-card-bg, #edf4ff); }
+.di-metric__value, .di-metric__label { color: var(--di-card-text, #174b87); }
+.di-metric--total { --di-card-accent: #1d4ed8; --di-card-bg: #eaf1ff; --di-card-text: #1e3a8a; }
+.di-metric--nouvelle { --di-card-accent: #0891b2; --di-card-bg: #e5f8fc; --di-card-text: #155e75; }
+.di-metric--affectee { --di-card-accent: #2563eb; --di-card-bg: #edf4ff; --di-card-text: #174b87; }
+.di-metric--en-cours { --di-card-accent: #d97706; --di-card-bg: #fff5dc; --di-card-text: #794300; }
+.di-metric--resolue { --di-card-accent: #059669; --di-card-bg: #eaf7f0; --di-card-text: #166047; }
+.di-metric--cloturee { --di-card-accent: #7c3aed; --di-card-bg: #f1edf7; --di-card-text: #53426e; }
+.di-status--nouvelle { color: #155e75; background: #e5f8fc; border-color: #67c6da; }
+.di-status::before { content: ''; width: .45rem; height: .45rem; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.di-priority--normale { color: #174b87; background: #edf4ff; border-color: #b9d1ef; }
+@media (forced-colors: active) {
+  .di-metric, .di-status, .di-priority { border-color: CanvasText; }
+  .di-metric__value, .di-metric__label { color: CanvasText; }
 }
