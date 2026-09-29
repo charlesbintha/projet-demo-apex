@@ -1,0 +1,538 @@
+page 10 (
+    name: Demandes
+    alias: DEMANDES
+    title: Demandes
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+        cssClasses: di-page
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        authorizationScheme: @di-acces-application
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region demandes (
+        name: Demandes
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 5
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+        }
+    )
+
+    region di-1 (
+        name: Filtrer les demandes
+        type: staticContent
+        source {
+            htmlCode: <p class="di-lead">Seules les demandes auxquelles vous avez accès sont affichées.</p>
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+    )
+
+    region di-30 (
+        name: Indicateurs des demandes
+        type: plSqlDynamicContent
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                  l_total number;
+                  l_nouvelles number;
+                  l_affectees number;
+                  l_en_cours number;
+                  l_resolues number;
+                  l_cloturees number;
+                  procedure indicateur(p_libelle varchar2, p_nombre number, p_classe varchar2) is
+                  begin
+                    htp.p('<div class="di-metric di-metric--'||apex_escape.html_attribute(p_classe)||'"><dt class="di-metric__label">'||apex_escape.html(p_libelle)||
+                      '</dt><dd class="di-metric__value">'||to_char(p_nombre,'FM999999999999990')||'</dd></div>');
+                  end;
+                begin
+                  select count(*),
+                    count(case when d.statut='NOUVELLE' then 1 end),
+                    count(case when d.statut='AFFECTEE' then 1 end),
+                    count(case when d.statut='EN_COURS' then 1 end),
+                    count(case when d.statut='RESOLUE' then 1 end),
+                    count(case when d.statut='CLOTUREE' then 1 end)
+                  into l_total,l_nouvelles,l_affectees,l_en_cours,l_resolues,l_cloturees
+                  from di_v_demandes d
+                  where (:P10_STATUT is null or d.statut = :P10_STATUT)
+                    and (:P10_PRIORITE is null or d.priorite = :P10_PRIORITE)
+                    and (:P10_CATEGORIE_ID is null or
+                         d.categorie_id = to_number(:P10_CATEGORIE_ID default null on conversion error));
+                  htp.p('<p class="di-lead">Indicateurs selon les trois filtres ci-dessus. Les recherches propres au rapport ne sont pas incluses.</p>');
+                  htp.p('<dl class="di-metrics" aria-label="Répartition des demandes accessibles">');
+                  indicateur('Total',l_total,'total');
+                  indicateur('Nouvelles',l_nouvelles,'nouvelle');
+                  indicateur('Affectées',l_affectees,'affectee');
+                  indicateur('En cours',l_en_cours,'en-cours');
+                  indicateur('Résolues',l_resolues,'resolue');
+                  indicateur('Clôturées',l_cloturees,'cloturee');
+                  htp.p('</dl>');
+                end;
+                
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+            cssClasses: di-region
+        }
+    )
+
+    region di-demandes (
+        name: Liste des demandes
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select d.id,
+                       d.objet,
+                       c.libelle as categorie,
+                       case d.priorite when 'BASSE' then 'Basse' when 'NORMALE' then 'Normale'
+                            when 'HAUTE' then 'Haute' when 'URGENTE' then 'Urgente' end as priorite,
+                       case d.statut when 'NOUVELLE' then 'Nouvelle' when 'AFFECTEE' then 'Affectée'
+                            when 'EN_COURS' then 'En cours' when 'RESOLUE' then 'Résolue'
+                            when 'CLOTUREE' then 'Clôturée' end as statut,
+                       u.nom_affiche as demandeur,
+                       nvl(a.nom_affiche, 'Non affecté') as agent,
+                       d.cree_le,
+                       apex_page.get_url(p_page => 12, p_clear_cache => '12',
+                         p_items => 'P12_DEMANDE_ID', p_values => to_char(d.id, 'TM9')) as detail_url
+                from di_v_demandes d
+                join di_categorie c on c.id = d.categorie_id
+                join di_utilisateur u on u.id = d.demandeur_id
+                left join di_utilisateur a on a.id = d.agent_id
+                where (:P10_STATUT is null or d.statut = :P10_STATUT)
+                  and (:P10_PRIORITE is null or d.priorite = :P10_PRIORITE)
+                  and (:P10_CATEGORIE_ID is null or
+                       d.categorie_id = to_number(:P10_CATEGORIE_ID default null on conversion error))
+                order by d.cree_le desc, d.id desc
+                
+                ```
+            pageItemsToSubmit: [
+                P10_STATUT
+                P10_PRIORITE
+                P10_CATEGORIE_ID
+            ]
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+            cssClasses: di-report
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 1000000
+        }
+        messages {
+            whenNoDataFound: Aucune donnée accessible pour ces critères.
+            whenMoreDataFound: Limite du rapport atteinte. Affinez les filtres.
+        }
+        actionsMenu {
+            download: false
+        }
+        advanced {
+            savedReportMappingIdentifier: 91001000001010101
+        }
+
+        column AGENT (
+            type: plainText
+            heading {
+                heading: Agent
+                alignment: center
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: G
+            }
+        )
+
+        column CATEGORIE (
+            type: plainText
+            heading {
+                heading: Catégorie
+                alignment: center
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
+            }
+        )
+
+        column CREE_LE (
+            type: plainText
+            heading {
+                heading: Création
+                alignment: center
+            }
+            layout {
+                sequence: 80
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: H
+            }
+        )
+
+        column DEMANDEUR (
+            type: plainText
+            heading {
+                heading: Demandeur
+                alignment: center
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: F
+            }
+        )
+
+        column DETAIL_URL (
+            type: hidden
+            heading {
+                heading: Lien interne
+            }
+            layout {
+                sequence: 90
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: I
+            }
+            security {
+                escapeSpecialChars: false
+            }
+        )
+
+        column ID (
+            type: link
+            heading {
+                heading: Numéro
+                alignment: center
+            }
+            layout {
+                sequence: 10
+            }
+            link {
+                target: {
+                    type: url
+                    url: #DETAIL_URL#
+                }
+                linkText: #ID#
+                linkAttributes: aria-label="Ouvrir la demande #ID#"
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: A
+            }
+        )
+
+        column OBJET (
+            type: plainText
+            heading {
+                heading: Objet
+                alignment: center
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
+            }
+        )
+
+        column PRIORITE (
+            type: plainText
+            heading {
+                heading: Priorité
+                alignment: center
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: D
+            }
+        )
+
+        column STATUT (
+            type: plainText
+            heading {
+                heading: Statut
+                alignment: center
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: E
+            }
+        )
+
+        savedReport DI91001000001010100 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn AGENT (
+                sequence: 7
+            )
+
+            displayColumn CATEGORIE (
+                sequence: 3
+            )
+
+            displayColumn CREE_LE (
+                sequence: 8
+            )
+
+            displayColumn DEMANDEUR (
+                sequence: 6
+            )
+
+            displayColumn ID (
+                sequence: 1
+            )
+
+            displayColumn OBJET (
+                sequence: 2
+            )
+
+            displayColumn PRIORITE (
+                sequence: 4
+            )
+
+            displayColumn STATUT (
+                sequence: 5
+            )
+
+        )
+
+    )
+
+    pageItem P10_CATEGORIE_ID (
+        type: selectList
+        label {
+            label: Catégorie
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery: select c.libelle d, c.id r from di_categorie c where exists (select 1 from di_v_demandes d where d.categorie_id=c.id) order by c.libelle
+            displayExtraValues: false
+            nullDisplayValue: Tous
+        }
+        layout {
+            sequence: 30
+            region: @di-1
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P10_PRIORITE (
+        type: selectList
+        label {
+            label: Priorité
+            alignment: left
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC2:Basse;BASSE,Normale;NORMALE,Haute;HAUTE,Urgente;URGENTE
+            displayExtraValues: false
+            nullDisplayValue: Tous
+        }
+        layout {
+            sequence: 20
+            region: @di-1
+            slot: regionBody
+            alignment: left
+            startNewRow: false
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P10_STATUT (
+        type: selectList
+        label {
+            label: Statut
+            alignment: left
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC2:Nouvelle;NOUVELLE,Affectée;AFFECTEE,En cours;EN_COURS,Résolue;RESOLUE,Clôturée;CLOTUREE
+            displayExtraValues: false
+            nullDisplayValue: Tous
+        }
+        layout {
+            sequence: 10
+            region: @di-1
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    button creer (
+        buttonName: CREER
+        label: Créer une demande
+        layout {
+            sequence: 30
+            region: @demandes
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            showAsDisabled: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectUrl
+            targetUrl: f?p=&APP_ID.:11:&SESSION.::&DEBUG.:11
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from apex_application_pages where application_id=100 and page_id=11
+        }
+        security {
+            authorizationScheme: @di-demandeur
+        }
+    )
+
+    button filtrer (
+        buttonName: FILTRER
+        label: Appliquer les filtres
+        layout {
+            sequence: 10
+            region: @di-1
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button reinitialiser (
+        buttonName: REINITIALISER
+        label: Réinitialiser
+        layout {
+            sequence: 20
+            region: @di-1
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectUrl
+            targetUrl: f?p=&APP_ID.:10:&SESSION.::&DEBUG.:10,RIR
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    process vérifier-le-compte-connecté (
+        name: Vérifier le compte connecté
+        type: executeCode
+        source {
+            plsqlCode: declare l_id number; l_role varchar2(20); begin di_security_api.get_actor(l_id,l_role); end;
+        }
+        execution {
+            sequence: 5
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 91001000001010300
+        }
+    )
+
+)
+

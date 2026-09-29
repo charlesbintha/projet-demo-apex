@@ -1,0 +1,66 @@
+app DEMANDE-INTERNE (
+    name: Demande Interne
+    genAI {
+        service: @extract_invoice_data_1
+    }
+    logo {
+        type: text
+        text: Demande Interne
+    }
+    navigation {
+        homeUrl: {
+            page: 1
+        }
+        loginUrl: {
+            page: LOGIN
+        }
+    }
+    navigationMenu {
+        listTemplate: @/side-navigation-menu
+        templateOptions: [
+            #DEFAULT#
+            js-defaultCollapsed
+            js-navCollapsed--hidden
+            t-TreeNav--styleA
+        ]
+        list: @navigation-menu
+    }
+    navigationBar {
+        list: @navigation-bar
+        listTemplate: @/navigation-bar
+        templateOptions: #DEFAULT#
+    }
+    userInterface {
+        currentTheme: @universal-theme
+        globalPage: 0
+        addBuiltWithApexToFooter: false
+    }
+    appFormatMasks {
+        date: DS
+        timestamp: DS
+        timestampTimeZone: DS
+    }
+    javaScript {
+        fileUrls: #APP_FILES#app.js
+    }
+    css {
+        fileUrls: #APP_FILES#app.css
+    }
+    authentication {
+        scheme: @di-authentification-locale
+    }
+    sessionStateProtection {
+        checksumSalt: 70CB05F720CDB1250947F24310D47AC75AB973ED5109B1FC5C2BC2ED3B27DF04
+    }
+    runtime {
+        allowFeedback: true
+    }
+
+    substitution APP_NAME (
+        value {
+            staticValue: Demande Interne
+        }
+    )
+
+)
+

@@ -1,0 +1,13 @@
+authentication di-authentification-locale (
+    name: DI_AUTHENTIFICATION_LOCALE
+    type: custom
+    settings {
+        authFunctionName: DI_AUTH_API.AUTHENTICATE
+    }
+)
+
+authentication oracle-apex-accounts (
+    name: Oracle APEX Accounts
+    type: oracleApexAccounts
+)
+
