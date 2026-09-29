@@ -15,10 +15,6 @@ authorization di-acces-application (
     settings {
         plsqlFunctionBody:
             ```plsql
-            if sys_context('APEX$SESSION','APP_ID') is null
-               or sys_context('APEX$SESSION','APP_ID') <> '100' then
-              return false;
-            end if;
             return di_security_api.has_role('DEMANDEUR') = 1
                 or di_security_api.has_role('AGENT') = 1
                 or di_security_api.has_role('RESPONSABLE') = 1;
@@ -43,7 +39,6 @@ authorization di-affecter-demande (
               l_value varchar2(4000);
             begin
               if sys_context('APEX$SESSION','APP_ID') is null
-                 or sys_context('APEX$SESSION','APP_ID') <> '100'
                  or apex_application.g_flow_step_id is null
                  or apex_application.g_flow_step_id <> 12 then
                 return false;
@@ -79,8 +74,7 @@ authorization di-agent (
     settings {
         plsqlFunctionBody:
             ```plsql
-            if sys_context('APEX$SESSION','APP_ID') is null
-               or sys_context('APEX$SESSION','APP_ID') <> '100' then
+            if sys_context('APEX$SESSION','APP_ID') is null then
               return false;
             end if;
             return di_security_api.has_role('AGENT') = 1;
@@ -105,7 +99,6 @@ authorization di-cloturer-demande (
               l_value varchar2(4000);
             begin
               if sys_context('APEX$SESSION','APP_ID') is null
-                 or sys_context('APEX$SESSION','APP_ID') <> '100'
                  or apex_application.g_flow_step_id is null
                  or apex_application.g_flow_step_id <> 12 then
                 return false;
@@ -149,7 +142,6 @@ authorization di-commenter-demande (
               l_value varchar2(4000);
             begin
               if sys_context('APEX$SESSION','APP_ID') is null
-                 or sys_context('APEX$SESSION','APP_ID') <> '100'
                  or apex_application.g_flow_step_id is null
                  or apex_application.g_flow_step_id <> 12 then
                 return false;
@@ -185,7 +177,7 @@ authorization di-demandeur (
         plsqlFunctionBody:
             ```plsql
             if sys_context('APEX$SESSION','APP_ID') is null
-               or sys_context('APEX$SESSION','APP_ID') <> '100' then
+                then
               return false;
             end if;
             return di_security_api.has_role('DEMANDEUR') = 1;
@@ -210,7 +202,6 @@ authorization di-demarrer-demande (
               l_value varchar2(4000);
             begin
               if sys_context('APEX$SESSION','APP_ID') is null
-                 or sys_context('APEX$SESSION','APP_ID') <> '100'
                  or apex_application.g_flow_step_id is null
                  or apex_application.g_flow_step_id <> 12 then
                 return false;
@@ -254,7 +245,6 @@ authorization di-lire-demande (
               l_value varchar2(4000);
             begin
               if sys_context('APEX$SESSION','APP_ID') is null
-                 or sys_context('APEX$SESSION','APP_ID') <> '100'
                  or apex_application.g_flow_step_id is null
                  or apex_application.g_flow_step_id <> 12 then
                 return false;
@@ -297,7 +287,6 @@ authorization di-resoudre-demande (
               l_value varchar2(4000);
             begin
               if sys_context('APEX$SESSION','APP_ID') is null
-                 or sys_context('APEX$SESSION','APP_ID') <> '100'
                  or apex_application.g_flow_step_id is null
                  or apex_application.g_flow_step_id <> 12 then
                 return false;
@@ -334,7 +323,7 @@ authorization di-responsable (
         plsqlFunctionBody:
             ```plsql
             if sys_context('APEX$SESSION','APP_ID') is null
-               or sys_context('APEX$SESSION','APP_ID') <> '100' then
+               then
               return false;
             end if;
             return di_security_api.has_role('RESPONSABLE') = 1;
