@@ -16,6 +16,25 @@ page 10 (
         formAutoComplete: false
     }
 
+    region demandes (
+        name: Demandes
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 5
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+        }
+    )
+
     region di-1 (
         name: Filtrer les demandes
         type: staticContent
@@ -24,6 +43,63 @@ page 10 (
         }
         layout {
             sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+    )
+
+    region di-30 (
+        name: Indicateurs des demandes
+        type: plSqlDynamicContent
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                  l_total number;
+                  l_nouvelles number;
+                  l_affectees number;
+                  l_en_cours number;
+                  l_resolues number;
+                  l_cloturees number;
+                  procedure indicateur(p_libelle varchar2, p_nombre number, p_classe varchar2) is
+                  begin
+                    htp.p('<div class="di-metric di-metric--'||apex_escape.html_attribute(p_classe)||'"><dt class="di-metric__label">'||apex_escape.html(p_libelle)||
+                      '</dt><dd class="di-metric__value">'||to_char(p_nombre,'FM999999999999990')||'</dd></div>');
+                  end;
+                begin
+                  select count(*),
+                    count(case when d.statut='NOUVELLE' then 1 end),
+                    count(case when d.statut='AFFECTEE' then 1 end),
+                    count(case when d.statut='EN_COURS' then 1 end),
+                    count(case when d.statut='RESOLUE' then 1 end),
+                    count(case when d.statut='CLOTUREE' then 1 end)
+                  into l_total,l_nouvelles,l_affectees,l_en_cours,l_resolues,l_cloturees
+                  from di_v_demandes d
+                  where (:P10_STATUT is null or d.statut = :P10_STATUT)
+                    and (:P10_PRIORITE is null or d.priorite = :P10_PRIORITE)
+                    and (:P10_CATEGORIE_ID is null or
+                         d.categorie_id = to_number(:P10_CATEGORIE_ID default null on conversion error));
+                  htp.p('<p class="di-lead">Indicateurs selon les trois filtres ci-dessus. Les recherches propres au rapport ne sont pas incluses.</p>');
+                  htp.p('<dl class="di-metrics" aria-label="Répartition des demandes accessibles">');
+                  indicateur('Total',l_total,'total');
+                  indicateur('Nouvelles',l_nouvelles,'nouvelle');
+                  indicateur('Affectées',l_affectees,'affectee');
+                  indicateur('En cours',l_en_cours,'en-cours');
+                  indicateur('Résolues',l_resolues,'resolue');
+                  indicateur('Clôturées',l_cloturees,'cloturee');
+                  htp.p('</dl>');
+                end;
+                
+                ```
+        }
+        layout {
+            sequence: 20
             slot: body
         }
         appearance {
@@ -72,7 +148,7 @@ page 10 (
             ]
         }
         layout {
-            sequence: 20
+            sequence: 30
             slot: body
         }
         appearance {
@@ -322,6 +398,7 @@ page 10 (
             region: @di-1
             slot: regionBody
             alignment: left
+            startNewRow: false
         }
         appearance {
             template: @/optional-floating
@@ -346,6 +423,7 @@ page 10 (
             region: @di-1
             slot: regionBody
             alignment: left
+            startNewRow: false
         }
         appearance {
             template: @/optional-floating
@@ -382,7 +460,7 @@ page 10 (
         label: Créer une demande
         layout {
             sequence: 30
-            region: @di-1
+            region: @demandes
             slot: next
         }
         appearance {
@@ -411,7 +489,7 @@ page 10 (
         layout {
             sequence: 10
             region: @di-1
-            slot: next
+            slot: create
         }
         appearance {
             buttonTemplate: @/text
@@ -428,7 +506,7 @@ page 10 (
         layout {
             sequence: 20
             region: @di-1
-            slot: next
+            slot: create
         }
         appearance {
             buttonTemplate: @/text

@@ -84,7 +84,6 @@ page 12 (
         appearance {
             template: @/standard
             templateOptions: #DEFAULT#
-            cssClasses: di-region
         }
     )
 
@@ -97,8 +96,10 @@ page 12 (
         }
         appearance {
             template: @/standard
-            templateOptions: #DEFAULT#
-            cssClasses: di-region
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
         }
         security {
             authorizationScheme: @di-affecter-demande
@@ -115,7 +116,6 @@ page 12 (
         appearance {
             template: @/standard
             templateOptions: #DEFAULT#
-            cssClasses: di-region
         }
         security {
             authorizationScheme: @di-demarrer-demande
@@ -131,8 +131,10 @@ page 12 (
         }
         appearance {
             template: @/standard
-            templateOptions: #DEFAULT#
-            cssClasses: di-region
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
         }
         security {
             authorizationScheme: @di-resoudre-demande
@@ -149,7 +151,6 @@ page 12 (
         appearance {
             template: @/standard
             templateOptions: #DEFAULT#
-            cssClasses: di-region
         }
         security {
             authorizationScheme: @di-cloturer-demande
@@ -165,8 +166,10 @@ page 12 (
         }
         appearance {
             template: @/standard
-            templateOptions: #DEFAULT#
-            cssClasses: di-region
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
         }
         security {
             authorizationScheme: @di-commenter-demande
@@ -514,6 +517,25 @@ page 12 (
 
     )
 
+    region détail-de-la-demande (
+        name: Détail de la demande
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 5
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+        }
+    )
+
     pageItem P12_AGENT_ID (
         type: selectList
         label {
@@ -730,7 +752,7 @@ page 12 (
         label: Recharger
         layout {
             sequence: 20
-            region: @di-1
+            region: @détail-de-la-demande
             slot: next
         }
         appearance {
@@ -774,7 +796,7 @@ page 12 (
         label: Retour aux demandes
         layout {
             sequence: 10
-            region: @di-1
+            region: @détail-de-la-demande
             slot: next
         }
         appearance {
