@@ -1,0 +1,284 @@
+page 11 (
+    name: Formulaire de demande
+    alias: FORMULAIRE-DE-DEMANDE
+    title: Formulaire de demande
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @/modal-dialog
+        templateOptions: #DEFAULT#
+        cssClasses: di-page
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        authorizationScheme: @di-demandeur
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region actions (
+        name: Actions
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region di-creation-demande (
+        name: Nouvelle demande
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P11_CATEGORIE_ID (
+        type: selectList
+        label {
+            label: Catégorie
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select libelle as d, id as r
+                from di_categorie
+                where actif = 'O'
+                order by libelle
+                
+                ```
+            displayExtraValues: false
+            nullDisplayValue: — Sélectionner —
+        }
+        layout {
+            sequence: 30
+            region: @di-creation-demande
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+    )
+
+    pageItem P11_DESCRIPTION (
+        type: textarea
+        label {
+            label: Description
+            alignment: left
+        }
+        settings {
+            charCounter: true
+            trimSpaces: none
+        }
+        layout {
+            sequence: 20
+            region: @di-creation-demande
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+            width: 60
+            height: 6
+        }
+        validation {
+            valueRequired: true
+            maxLength: 4000
+        }
+    )
+
+    pageItem P11_OBJET (
+        type: textField
+        label {
+            label: Objet
+            alignment: left
+        }
+        layout {
+            sequence: 10
+            region: @di-creation-demande
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+            width: 60
+        }
+        validation {
+            valueRequired: true
+            maxLength: 200
+        }
+    )
+
+    pageItem P11_PRIORITE (
+        type: selectList
+        label {
+            label: Priorité
+            alignment: left
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC2:Basse;BASSE,Normale;NORMALE,Haute;HAUTE,Urgente;URGENTE
+            displayExtraValues: false
+            nullDisplayValue: — Sélectionner —
+        }
+        layout {
+            sequence: 40
+            region: @di-creation-demande
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+    )
+
+    button annuler (
+        buttonName: ANNULER
+        label: Annuler
+        layout {
+            sequence: 21
+            region: @actions
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectUrl
+            targetUrl: javascript:apex.navigation.dialog.cancel(true);
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button creer (
+        buttonName: CREER
+        label: Créer la demande
+        layout {
+            sequence: 22
+            region: @actions
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    process contrôler-le-demandeur (
+        name: Contrôler le demandeur
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- BEFORE_HEADER ; aucune mutation metier au simple affichage.
+                begin
+                  di_security_api.assert_role('DEMANDEUR');
+                  if apex_application.g_request is null and :P11_PRIORITE is null then
+                    :P11_PRIORITE := 'NORMALE';
+                  end if;
+                end;
+                
+                ```
+        }
+        execution {
+            sequence: 5
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 91001000001100031
+        }
+    )
+
+    process créer-la-demande-via-api (
+        name: Créer la demande via API
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- Processus AFTER_SUBMIT de la page 11. Ne pas executer dans SQL Commands.
+                -- Executer sans condition d'affichage : la requete est controlee ici.
+                declare
+                  l_id number;
+                  l_categorie number;
+                begin
+                  di_security_api.assert_role('DEMANDEUR');
+                  if apex_application.g_request is null or apex_application.g_request <> 'CREER' then
+                    raise_application_error(-20003, 'Action non autorisee.');
+                  end if;
+                  l_categorie := to_number(:P11_CATEGORIE_ID default null on conversion error);
+                  di_request_api.creer_demande(
+                    p_objet => :P11_OBJET,
+                    p_description => :P11_DESCRIPTION,
+                    p_categorie_id => l_categorie,
+                    p_priorite => :P11_PRIORITE,
+                    p_demande_id => l_id);
+                  -- Pas d'identite ni de statut fournis par le navigateur.
+                  -- Aucun COMMIT : la transaction reste geree par APEX.
+                  apex_application.g_print_success_message := 'Demande creee avec succes.';
+                exception
+                  when others then
+                    if sqlcode in (-20001,-20002,-20003,-20006) then
+                      apex_error.add_error(
+                        p_message => case sqlcode
+                          when -20001 then 'Votre session a expire. Reconnectez-vous.'
+                          when -20002 then 'Votre compte est inactif ou indisponible.'
+                          when -20003 then 'La creation est reservee aux demandeurs autorises.'
+                          else 'Verifiez les champs obligatoires, la categorie active et la priorite. Objet : 200 caracteres maximum ; description : 4 000 octets maximum.'
+                        end,
+                        p_display_location => apex_error.c_inline_in_notification);
+                    else
+                      raise;
+                    end if;
+                end;
+                
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 91001000001100032
+        }
+    )
+
+    process fermer-après-création-réussie (
+        name: Fermer après création réussie
+        type: closeDialog
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 91001000001100033
+        }
+    )
+
+)
+
