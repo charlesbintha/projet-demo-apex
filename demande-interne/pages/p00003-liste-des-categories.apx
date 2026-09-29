@@ -1,0 +1,222 @@
+page 3 (
+    name: Liste des Catégories
+    alias: LISTE-DES-CATEGORIES
+    title: Liste des Catégories
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        authorizationScheme: @di-responsable
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region breadcrumb (
+        name: Liste des Catégories
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region liste-des-categories (
+        name: Liste des Categories
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery: select id,libelle,actif from di_categorie where di_security_api.has_role('RESPONSABLE')=1
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: [
+                #DEFAULT#
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+        }
+        security {
+            authorizationScheme: @di-responsable
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
+        }
+        download {
+            formats: [
+                csv
+                html
+                excel
+                pdf
+            ]
+        }
+        advanced {
+            savedReportMappingIdentifier: 14981139688328615
+        }
+
+        savedReport primary (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @ID
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @LIBELLE
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @ACTIF
+                layout {
+                    sequence: 3
+                }
+            )
+
+        )
+
+        column ACTIF (
+            type: textField
+            heading {
+                heading: Actif
+            }
+            layout {
+                sequence: 30
+            }
+            validation {
+                valueRequired: true
+                maxLength: 1
+            }
+            source {
+                databaseColumn: ACTIF
+                dataType: varchar2
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+            }
+        )
+
+        column ID (
+            type: hidden
+            layout {
+                sequence: 10
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                queryOnly: true
+                primaryKey: true
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+
+        column LIBELLE (
+            type: textField
+            heading {
+                heading: Libelle
+            }
+            layout {
+                sequence: 20
+            }
+            validation {
+                valueRequired: true
+                maxLength: 100
+            }
+            source {
+                databaseColumn: LIBELLE
+                dataType: varchar2
+            }
+            columnFilter {
+                performanceImpactingOperators: [
+                    contains
+                    startsWith
+                    caseInsensitive
+                    regexp
+                ]
+            }
+        )
+
+        page {
+            borderWidth: 0.5
+            borderColor: #666666
+        }
+    )
+
+    button retour-demandes (
+        buttonName: RETOUR_DEMANDES
+        label: Retour aux demandes
+        layout {
+            sequence: 10
+            region: @breadcrumb
+            slot: create
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectUrl
+            targetUrl: f?p=&APP_ID.:10:&SESSION.::&DEBUG.
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    process verifier-le-responsable (
+        name: Verifier le responsable
+        type: executeCode
+        source {
+            plsqlCode: begin di_security_api.assert_role('RESPONSABLE'); end;
+        }
+        execution {
+            sequence: 5
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 91001000000300031
+        }
+    )
+
+)
+

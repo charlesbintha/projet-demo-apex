@@ -20,8 +20,5 @@ genAIService extract_invoice_data_1 (
             }
             ```
     }
-    appBuilder {
-        defaultForNewApps: true
-    }
 )
 

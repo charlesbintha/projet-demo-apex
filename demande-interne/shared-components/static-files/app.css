@@ -1,4 +1,4 @@
-/* Demande Interne — 1.0.2 — Oracle APEX Universal Theme 42 / 26.1.
+/* Demande Interne â€” 1.0.2 â€” Oracle APEX Universal Theme 42 / 26.1.
    Application file: #APP_FILES#app.css?v=1.0.2
    No external dependency. Keep UT markup, focus, validation and visibility rules. */
 :root {
@@ -146,3 +146,19 @@
   .di-metric, .di-status, .di-priority { border-color: CanvasText; }
   .di-metric__value, .di-metric__label { color: CanvasText; }
 }
+
+/* Tableau de bord : classes du HTML des KPI uniquement, aucune classe de region. */
+.di-dash-summary { margin: 0 0 1rem; color: #42566e; line-height: 1.6; }
+.di-dash-kpis { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 1rem; margin: 0; }
+.di-dash-kpi { padding: 1.2rem; border: 1px solid var(--di-kpi-border); border-top: 4px solid var(--di-kpi-accent); border-radius: .75rem; background: var(--di-kpi-bg); color: var(--di-kpi-text); }
+.di-dash-kpi dt { font-size: .95rem; font-weight: 600; }
+.di-dash-kpi dd { margin: .55rem 0 0; font-size: 2.2rem; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.di-dash-kpi--nouvelle { --di-kpi-bg:#e5f8fc; --di-kpi-text:#155e75; --di-kpi-border:#67c6da; --di-kpi-accent:#0891b2; }
+.di-dash-kpi--affectee { --di-kpi-bg:#edf4ff; --di-kpi-text:#174b87; --di-kpi-border:#b9d1ef; --di-kpi-accent:#2563eb; }
+.di-dash-kpi--encours { --di-kpi-bg:#fff5dc; --di-kpi-text:#794300; --di-kpi-border:#e5c574; --di-kpi-accent:#d97706; }
+.di-dash-kpi--resolue { --di-kpi-bg:#eaf7f0; --di-kpi-text:#166047; --di-kpi-border:#add5c0; --di-kpi-accent:#059669; }
+.di-dash-kpi--cloturee { --di-kpi-bg:#f1edf7; --di-kpi-text:#53426e; --di-kpi-border:#cfc1e0; --di-kpi-accent:#7c3aed; }
+@media (max-width: 1000px) { .di-dash-kpis { grid-template-columns: repeat(3,minmax(0,1fr)); } }
+@media (max-width: 640px) { .di-dash-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 380px) { .di-dash-kpis { grid-template-columns: minmax(0,1fr); } }
+@media (forced-colors: active) { .di-dash-kpi { border-color: CanvasText; color: CanvasText; background: Canvas; } }
